@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}首页{% endblock %}
+{% block content %}
+    <div class="d-flex justify-content-center mb-4">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('user_login') }}" class="btn btn-outline-primary">用户入口</a>
+            <a href="{{ url_for('provider_login') }}" class="btn btn-outline-success">服务商入口</a>
+        </div>
+    </div>
+
+    <h1 class="mb-4">热门服务推荐</h1>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for service in services %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ service.name }}</h5>
+                        <p class="card-text">{{ service.description|truncate(80) }}</p>
+                        <p class="text-muted">价格：¥{{ service.price }}</p>
+                        <p class="text-muted">时长：{{ service.duration }} 分钟</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('service_details', service_id=service.id) }}"
+                           class="btn btn-primary">查看详情</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

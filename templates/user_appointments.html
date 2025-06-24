@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}我的预约{% endblock %}
+{% block content %}
+    <h2 class="mb-4">我的预约</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>服务</th>
+                <th>时间</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for appointment in appointments %}
+                <tr>
+                    <td>{{ appointment.service.name }}</td>
+                    <!-- 修改这里，使用 strftime 方法格式化日期和时间 -->
+                    <td>{{ appointment.slot.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

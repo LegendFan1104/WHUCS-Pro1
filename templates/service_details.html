@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ service.name }} - 详情{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ service.name }}</h2>
+            <p class="text-muted">服务商：{{ provider.username }}</p>
+            <p>{{ service.description }}</p>
+            <p>价格：¥{{ service.price }}</p>
+            <p>时长：{{ service.duration }} 分钟</p>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">可用时段</h5>
+                    {% if available_slots %}
+                        <form method="POST" action="{{ url_for('book_appointment') }}">
+                            <input type="hidden" name="service_id" value="{{ service.id }}">
+                            <div class="list-group">
+                                {% for slot in available_slots %}
+                                    <label class="list-group-item">
+                                        <input type="radio" name="slot_id" value="{{ slot.id }}" required>
+                                        {{ slot.start_time.strftime('%Y-%m-%d %H:%M') }}
+                                        至
+                                        {{ slot.end_time.strftime('%Y-%m-%d %H:%M') }}
+                                    </label>
+                                {% endfor %}
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-3">立即预约</button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted">暂无可用时段</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
