@@ -9,15 +9,14 @@
                 <th>服务</th>
                 <th>时间</th>
                 <th>状态</th>
-                <th>操作</th>
             </tr>
             </thead>
             <tbody>
             {% for appointment in appointments %}
                 <tr>
                     <td>{{ appointment.service.name }}</td>
-                    <!-- 修改这里，使用 strftime 方法格式化日期和时间 -->
                     <td>{{ appointment.slot.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ appointment.status }}</td>
                 </tr>
             {% endfor %}
             </tbody>

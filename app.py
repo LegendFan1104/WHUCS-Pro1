@@ -15,6 +15,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'user_login'
 login_manager.login_message = '请登录以访问此页面。'
+login_manager.login_message_category = 'info'  # 设置消息类别为 'info'
 
 
 # 自定义装饰器：检查用户角色
@@ -147,7 +148,8 @@ def user_login():
             flash('请输入用户名和密码', 'error')
             return redirect(url_for('user_login'))
 
-        user = User.query.filter_by(username=username).first()
+        # 只查询角色为 'user' 的用户
+        user = User.query.filter_by(username=username, role='user').first()
         if user and user.check_password(password):
             login_user(user)
             flash('登录成功', 'success')
@@ -198,7 +200,7 @@ def provider_register():
             db.session.add(user)
             db.session.commit()
             flash('注册成功，请登录', 'success')
-            return redirect(url_for('user_login'))
+            return redirect(url_for('provider_login'))  # 修改为 provider_login
         except Exception as e:
             db.session.rollback()
             flash(f'注册失败: {str(e)}', 'error')
@@ -237,7 +239,7 @@ def add_service():
     if request.method == 'POST':
         data = request.form
 
-        if not all([data.get('name'), data.get('description'), data.get('price'), data.get('duration'), data.get('start_time'), data.get('end_time')]):
+        if not all([data.get('name'), data.get('description'), data.get('price'), data.get('duration'), data.get('start_time')]):
             flash('请填写所有必填字段', 'error')
             return redirect(url_for('add_service'))
 
@@ -245,12 +247,12 @@ def add_service():
             price = float(data['price'])
             duration = int(data['duration'])
             start_time = datetime.fromisoformat(data['start_time'])
-            end_time = datetime.fromisoformat(data['end_time'])
+            end_time = start_time + timedelta(minutes=duration)
         except ValueError:
-            flash('价格、时长和时间格式必须正确', 'error')
+            flash('输入的数据格式不正确，请检查价格、时长和开始时间', 'error')
             return redirect(url_for('add_service'))
 
-        service = Service(
+        new_service = Service(
             name=data['name'],
             description=data['description'],
             price=price,
@@ -259,24 +261,13 @@ def add_service():
         )
 
         try:
-            db.session.add(service)
+            db.session.add(new_service)
             db.session.commit()
-
-            # 创建可用时段
-            slot = AvailableSlot(
-                service_id=service.id,
-                start_time=start_time,
-                end_time=end_time,
-                is_booked=False
-            )
-            db.session.add(slot)
-            db.session.commit()
-
             flash('服务添加成功', 'success')
             return redirect(url_for('provider_dashboard'))
         except Exception as e:
             db.session.rollback()
-            flash(f'添加服务失败: {str(e)}', 'error')
+            flash(f'添加服务时出错: {str(e)}', 'error')
             return redirect(url_for('add_service'))
 
     return render_template('add_service.html')
@@ -390,6 +381,7 @@ def user_appointments():
     appointments = Appointment.query.filter_by(user_id=current_user.id).all()
     return render_template('user_appointments.html', appointments=appointments)
 
+
 @app.route('/search_services', methods=['GET'])
 @login_required
 def search_services():
@@ -399,6 +391,7 @@ def search_services():
     else:
         services = Service.query.all()
     return render_template('search_results.html', services=services)
+
 
 @app.route('/provider/login', methods=['GET', 'POST'])
 def provider_login():
@@ -413,6 +406,7 @@ def provider_login():
             flash('请输入用户名和密码', 'error')
             return redirect(url_for('provider_login'))
 
+        # 只查询角色为 'provider' 的用户
         user = User.query.filter_by(username=username, role='provider').first()
         if user and user.check_password(password):
             login_user(user)
@@ -423,6 +417,67 @@ def provider_login():
 
     return render_template('provider_login.html')
 
+
+# 服务商批准预约
+@app.route('/provider/appointment/<int:appointment_id>/approve', methods=['POST'])
+@login_required
+@role_required('provider')
+def approve_appointment(appointment_id):
+    appointment = Appointment.query.get_or_404(appointment_id)
+    if appointment.service.provider_id == current_user.id:
+        appointment.status = 'confirmed'
+        try:
+            db.session.commit()
+            flash('预约已批准', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'批准预约失败: {str(e)}', 'error')
+    else:
+        flash('你无权批准此预约', 'error')
+    return redirect(url_for('provider_dashboard'))
+
+
+# 服务商拒绝预约
+@app.route('/provider/appointment/<int:appointment_id>/reject', methods=['POST'])
+@login_required
+@role_required('provider')
+def reject_appointment(appointment_id):
+    appointment = Appointment.query.get_or_404(appointment_id)
+    if appointment.service.provider_id == current_user.id:
+        appointment.status = 'canceled'
+        appointment.slot.is_booked = False  # 释放该时段
+        try:
+            db.session.commit()
+            flash('预约已拒绝', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'拒绝预约失败: {str(e)}', 'error')
+    else:
+        flash('你无权拒绝此预约', 'error')
+    return redirect(url_for('provider_dashboard'))
+
+
+@app.route('/provider/service/cancel/<int:service_id>', methods=['POST'])
+@login_required
+@role_required('provider')
+def cancel_service(service_id):
+    service = Service.query.get_or_404(service_id)
+    if service.provider_id != current_user.id:
+        flash('你没有权限取消此服务', 'error')
+        return redirect(url_for('provider_dashboard'))
+    try:
+        # 先删关联的预约
+        Appointment.query.filter_by(service_id=service_id).delete()
+        # 再删关联的可用时段
+        AvailableSlot.query.filter_by(service_id=service_id).delete()
+        # 最后删服务
+        db.session.delete(service)
+        db.session.commit()
+        flash('服务已成功取消', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'取消服务时出错: {str(e)}', 'error')
+    return redirect(url_for('provider_dashboard'))
 
 
 

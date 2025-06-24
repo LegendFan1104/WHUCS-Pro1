@@ -9,6 +9,16 @@
                     <h5 class="card-title">我的服务</h5>
                     <p class="card-text">已发布 {{ services|length }} 项服务</p>
                     <a href="{{ url_for('add_service') }}" class="btn btn-primary">添加新服务</a>
+                    <ul class="list-group list-group-flush mt-3">
+                        {% for service in services %}
+                            <li class="list-group-item">
+                                {{ service.name }}
+                                <form method="POST" action="{{ url_for('cancel_service', service_id=service.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger float-end">取消服务</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
         </div>
@@ -37,6 +47,7 @@
                 <th>服务</th>
                 <th>时间</th>
                 <th>状态</th>
+                <th>操作</th>
             </tr>
             </thead>
             <tbody>
@@ -46,6 +57,16 @@
                     <td>{{ appointment.service.name }}</td>
                     <td>{{ appointment.slot.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td>{{ appointment.status }}</td>
+                    <td>
+                        {% if appointment.status == 'pending' %}
+                            <form method="POST" action="{{ url_for('approve_appointment', appointment_id=appointment.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-success">批准</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('reject_appointment', appointment_id=appointment.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-danger">拒绝</button>
+                            </form>
+                        {% endif %}
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>

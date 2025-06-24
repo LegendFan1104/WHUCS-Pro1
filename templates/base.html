@@ -5,11 +5,29 @@
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <style>
+        body {
+            background: radial-gradient(
+                ellipse at center,
+                white 0%,
+                #f0f0f0 70%,
+                #e0e0e0 100%
+            );
+            min-height: 100vh;
+        }
+
+        /* 居中显示的通知样式 */
         .flash-message {
             position: fixed;
-            top: 10px;
-            right: 20px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             z-index: 9999;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .flash-message .alert {
+            margin-bottom: 10px;
         }
     </style>
 </head>
@@ -19,7 +37,6 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <!-- 将 'error' 映射为 'danger' -->
                 {% set alert_category = 'danger' if category == 'error' else category %}
                 <div class="alert alert-{{ alert_category }} alert-dismissible fade show" role="alert">
                     {{ message }}
@@ -47,9 +64,12 @@
                     <a class="nav-link" href="{{ url_for('search_services') }}">搜索服务</a>
                 </li>
                 {% if current_user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('user_appointments') }}">我的预约</a>
-                    </li>
+                    <!-- 只有普通用户角色才显示“我的预约” -->
+                    {% if current_user.role == 'user' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('user_appointments') }}">我的预约</a>
+                        </li>
+                    {% endif %}
                     {% if current_user.role == 'provider' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('provider_dashboard') }}">服务商后台</a>
@@ -68,6 +88,7 @@
                     <div class="btn-group" role="group">
                         <a href="{{ url_for('user_login') }}" class="btn btn-outline-light">用户登录</a>
                         <a href="{{ url_for('provider_login') }}" class="btn btn-outline-light">服务商登录</a>
+                        <a href="{{ url_for('provider_register') }}" class="btn btn-primary ms-2">服务商注册</a>
                     </div>
                     <a href="{{ url_for('user_register') }}" class="btn btn-primary ms-2">用户注册</a>
                 {% endif %}
