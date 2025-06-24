@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}添加服务时段{% endblock %}
+{% block content %}
+    <h2 class="mb-4">为服务 <strong>{{ service.name }}</strong> 添加时段</h2>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="start_time" class="form-label">开始时间</label>
+            <input type="datetime-local" class="form-control" id="start_time" name="start_time" required>
+        </div>
+        <div class="mb-3">
+            <label for="end_time" class="form-label">结束时间</label>
+            <input type="datetime-local" class="form-control" id="end_time" name="end_time" required>
+        </div>
+        <button type="submit" class="btn btn-primary">添加时段</button>
+    </form>
+{% endblock %}
