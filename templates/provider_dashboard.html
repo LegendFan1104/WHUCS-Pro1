@@ -2,6 +2,35 @@
 {% block title %}服务商后台{% endblock %}
 {% block content %}
     <h2 class="mb-4">服务商后台 - {{ current_user.username }}</h2>
+    <!-- 新增数据分析模块 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">数据分析</h5>
+                    <!-- 使用 ECharts 绘制图表 -->
+                    <div id="appointmentChart" style="width: 400px;height:200px;"></div>
+                    <div id="feedbackChart" style="width: 400px;height:200px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">所有评价</h5>
+                    <ul class="list-group">
+                        {% for feedback in all_feedbacks %}
+                            <li class="list-group-item">
+                                <strong>{{ feedback.user }}</strong> 对 <strong>{{ feedback.service }}</strong> 的评价：
+                                <p>评分: {{ feedback.rating }}</p>
+                                <p>评论: {{ feedback.comment }}</p>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="card">
@@ -13,6 +42,7 @@
                         {% for service in services %}
                             <li class="list-group-item">
                                 {{ service.name }}
+                                <a href="{{ url_for('add_service_slot', service_id=service.id) }}" class="btn btn-secondary float-end me-2">添加时段</a>
                                 <form method="POST" action="{{ url_for('cancel_service', service_id=service.id) }}" style="display: inline;">
                                     <button type="submit" class="btn btn-danger float-end">取消服务</button>
                                 </form>
@@ -25,11 +55,11 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">即将开始的时段</h5>
+                    <h5 class="card-title">还未预约的时段</h5>
                     <ul class="list-group list-group-flush">
                         {% for slot in upcoming_slots %}
                             <li class="list-group-item">
-                                {{ slot.start_time.strftime('%Y-%m-%d %H:%M') }} -
+                                {{ slot.service.name }} - {{ slot.start_time.strftime('%Y-%m-%d %H:%M') }} -
                                 {{ slot.end_time.strftime('%Y-%m-%d %H:%M') }}
                             </li>
                         {% endfor %}
@@ -38,7 +68,7 @@
             </div>
         </div>
     </div>
-    <h3 class="mb-3">即将处理的预约</h3>
+    <h3 class="mb-3">预约记录</h3>
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>
@@ -48,28 +78,117 @@
                 <th>时间</th>
                 <th>状态</th>
                 <th>操作</th>
+                <th>评价</th>
             </tr>
             </thead>
             <tbody>
-            {% for appointment in upcoming_appointments %}
-                <tr>
-                    <td>{{ appointment.user.username }}</td>
-                    <td>{{ appointment.service.name }}</td>
-                    <td>{{ appointment.slot.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>{{ appointment.status }}</td>
-                    <td>
-                        {% if appointment.status == 'pending' %}
-                            <form method="POST" action="{{ url_for('approve_appointment', appointment_id=appointment.id) }}" style="display: inline;">
-                                <button type="submit" class="btn btn-success">批准</button>
-                            </form>
-                            <form method="POST" action="{{ url_for('reject_appointment', appointment_id=appointment.id) }}" style="display: inline;">
-                                <button type="submit" class="btn btn-danger">拒绝</button>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
+                {% for appointment in all_appointments %}
+                    <tr>
+                        <td>{{ appointment.user.username }}</td>
+                        <td>{{ appointment.service.name }}</td>
+                        <td>{{ appointment.slot.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            {% if appointment.status == 'pending' %}
+                                审核中
+                            {% elif appointment.status == 'rejected' %}
+                                已拒绝
+                            {% elif appointment.status == 'confirmed' %}
+                                成功预约
+                            {% elif appointment.status == 'canceled' %}
+                                已取消
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if appointment.status == 'pending' %}
+                                <form method="POST" action="{{ url_for('approve_appointment', appointment_id=appointment.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-success">批准</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('reject_appointment', appointment_id=appointment.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger">拒绝</button>
+                                </form>
+                            {% elif appointment.status in ['canceled', 'rejected'] %}
+                                <span class="text-muted">无操作</span>
+                            {% else %}
+                                <span class="text-muted">无操作</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if appointment.feedback %}
+                                <p>评分: {{ appointment.feedback.rating }}，评论: {{ appointment.feedback.comment }}</p>
+                            {% else %}
+                                <p>暂无反馈</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
+
+    <!-- 引入 ECharts 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <script>
+        // 绘制成功预约占比饼状图
+        var appointmentChart = echarts.init(document.getElementById('appointmentChart'));
+        var confirmed_ratio = {{ confirmed_ratio }};
+        var total_count = {{ total_count }};
+        var confirmed_count = confirmed_ratio * total_count;
+        var appointmentOption = {
+            title: {
+                text: '成功预约占比',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: function (params) {
+                    return params.seriesName + '<br/>' +
+                        params.name + ': ' + params.value + ' (' + params.percent.toFixed(1) + '%)<br/>' +
+                        '总数量: ' + total_count;
+                }
+            },
+            series: [
+                {
+                    name: '预约状态',
+                    type: 'pie',
+                    radius: '50%',
+                    data: [
+                        { value: confirmed_count, name: '成功预约' },
+                        { value: total_count - confirmed_count, name: '其他' }
+                    ]
+                }
+            ]
+        };
+        appointmentChart.setOption(appointmentOption);
+
+        // 绘制成功预约中好评比例饼状图
+        var feedbackChart = echarts.init(document.getElementById('feedbackChart'));
+        var good_feedback_ratio = {{ good_feedback_ratio }};
+        var good_feedback_count = good_feedback_ratio * confirmed_count;
+        var feedbackOption = {
+            title: {
+                text: '成功预约中好评比例',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'item',
+                formatter: function (params) {
+                    return params.seriesName + '<br/>' +
+                        params.name + ': ' + params.value + ' (' + params.percent.toFixed(1) + '%)<br/>' +
+                        '总数量: ' + confirmed_count;
+                }
+            },
+            series: [
+                {
+                    name: '反馈情况',
+                    type: 'pie',
+                    radius: '50%',
+                    data: [
+                        { value: good_feedback_count, name: '好评' },
+                        { value: confirmed_count - good_feedback_count, name: '非好评' }
+                    ]
+                }
+            ]
+        };
+        feedbackChart.setOption(feedbackOption);
+    </script>
 {% endblock %}

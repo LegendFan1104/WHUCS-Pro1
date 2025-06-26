@@ -3,14 +3,37 @@
 {% block content %}
     <h2 class="mb-4">为服务 <strong>{{ service.name }}</strong> 添加时段</h2>
     <form method="POST">
-        <div class="mb-3">
-            <label for="start_time" class="form-label">开始时间</label>
-            <input type="datetime-local" class="form-control" id="start_time" name="start_time" required>
+        <div id="time-slots">
+            <div class="mb-3">
+                <label for="start_time_0" class="form-label">开始时间</label>
+                <input type="datetime-local" class="form-control" id="start_time_0" name="start_time[]" required min="{{ current_local_time }}">
+            </div>
+            <div class="mb-3">
+                <label for="end_time_0" class="form-label">结束时间</label>
+                <input type="datetime-local" class="form-control" id="end_time_0" name="end_time[]" required min="{{ current_local_time }}">
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="end_time" class="form-label">结束时间</label>
-            <input type="datetime-local" class="form-control" id="end_time" name="end_time" required>
-        </div>
+        <button type="button" class="btn btn-secondary" onclick="addTimeSlot()">添加更多时段</button>
         <button type="submit" class="btn btn-primary">添加时段</button>
     </form>
+
+    <script>
+        let slotCount = 1;
+        function addTimeSlot() {
+            const timeSlotsDiv = document.getElementById('time-slots');
+            const newSlot = document.createElement('div');
+            newSlot.innerHTML = `
+                <div class="mb-3">
+                    <label for="start_time_${slotCount}" class="form-label">开始时间</label>
+                    <input type="datetime-local" class="form-control" id="start_time_${slotCount}" name="start_time[]" required min="{{ current_local_time }}">
+                </div>
+                <div class="mb-3">
+                    <label for="end_time_${slotCount}" class="form-label">结束时间</label>
+                    <input type="datetime-local" class="form-control" id="end_time_${slotCount}" name="end_time[]" required min="{{ current_local_time }}">
+                </div>
+            `;
+            timeSlotsDiv.appendChild(newSlot);
+            slotCount++;
+        }
+    </script>
 {% endblock %}

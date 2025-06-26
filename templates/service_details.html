@@ -13,11 +13,14 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">可用时段</h5>
-                    {% if available_slots %}
+                    {% set current_time = now() %}
+                    <!-- 修改过滤条件为结束时间大于当前时间 -->
+                    {% set future_slots = available_slots|selectattr('end_time', 'gt', current_time)|list %}
+                    {% if future_slots %}
                         <form method="POST" action="{{ url_for('book_appointment') }}">
                             <input type="hidden" name="service_id" value="{{ service.id }}">
                             <div class="list-group">
-                                {% for slot in available_slots %}
+                                {% for slot in future_slots %}
                                     <label class="list-group-item">
                                         <input type="radio" name="slot_id" value="{{ slot.id }}" required>
                                         {{ slot.start_time.strftime('%Y-%m-%d %H:%M') }}

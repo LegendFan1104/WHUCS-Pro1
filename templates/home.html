@@ -2,6 +2,18 @@
 {% block title %}首页{% endblock %}
 {% block content %}
 
+    <!-- 置顶横幅模块 -->
+    {% if current_user.is_authenticated and upcoming_appointments %}
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">即将开始的预约</h4>
+            <ul>
+                {% for appointment in upcoming_appointments %}
+                    <li>{{ appointment.service.name }} - {{ appointment.slot.start_time.strftime('%Y-%m-%d %H:%M') }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
     <h1 class="mb-4">热门服务推荐</h1>
     <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for service in services %}

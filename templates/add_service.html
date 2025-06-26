@@ -19,57 +19,37 @@
             <label for="duration" class="form-label">时长（分钟）</label>
             <input type="number" class="form-control" id="duration" name="duration" required>
         </div>
-        <div class="mb-3">
-            <label for="start_time" class="form-label">开始时间</label>
-            <input type="datetime-local" class="form-control" id="start_time" name="start_time" required>
+        <div id="time-slots">
+            <div class="mb-3">
+                <label for="start_time_0" class="form-label">开始时间</label>
+                <input type="datetime-local" class="form-control" id="start_time_0" name="start_time[]" required min="{{ current_local_time }}">
+            </div>
+            <div class="mb-3">
+                <label for="end_time_0" class="form-label">结束时间</label>
+                <input type="datetime-local" class="form-control" id="end_time_0" name="end_time[]" required min="{{ current_local_time }}">
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="end_time" class="form-label">结束时间</label>
-            <input type="text" class="form-control" id="end_time" name="end_time" readonly>
-        </div>
+        <button type="button" class="btn btn-secondary" onclick="addTimeSlot()">添加更多时段</button>
         <button type="submit" class="btn btn-primary">提交</button>
     </form>
 
     <script>
-        // 获取 DOM 元素
-        const start_time_input = document.getElementById('start_time');
-        const duration_input = document.getElementById('duration');
-        const end_time_input = document.getElementById('end_time');
-
-        // 监听输入事件，当开始时间或时长变化时，重新计算结束时间
-        start_time_input.addEventListener('change', calculateEndTime);
-        duration_input.addEventListener('input', calculateEndTime);
-
-        function calculateEndTime() {
-            const start_time_value = start_time_input.value;
-            const duration_value = parseInt(duration_input.value, 10);
-
-            // 校验时长是否为非负整数
-            if (isNaN(duration_value) || duration_value < 0) {
-                end_time_input.value = '时长不能为负数，请输入有效时长';
-                return;
-            }
-
-            if (start_time_value) {
-                // 将开始时间转换为 Date 对象（注意：datetime-local 的值是带时区信息的，这里会自动转换为本地时间处理）
-                const start_date = new Date(start_time_value);
-                // 计算结束时间 = 开始时间 + 时长（分钟）对应的毫秒数
-                const end_date = new Date(start_date.getTime() + duration_value * 60 * 1000);
-
-                // 格式化结束时间为自定义格式（YYYY/MM/DD HH:mm）
-                const formatted_end_time = end_date.toLocaleString('zh-CN', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                }).replace(/\//g, '/').replace(', ', ' ');
-
-                end_time_input.value = formatted_end_time;
-            } else {
-                end_time_input.value = '请选择开始时间';
-            }
+        let slotCount = 1;
+        function addTimeSlot() {
+            const timeSlotsDiv = document.getElementById('time-slots');
+            const newSlot = document.createElement('div');
+            newSlot.innerHTML = `
+                <div class="mb-3">
+                    <label for="start_time_${slotCount}" class="form-label">开始时间</label>
+                    <input type="datetime-local" class="form-control" id="start_time_${slotCount}" name="start_time[]" required min="{{ current_local_time }}">
+                </div>
+                <div class="mb-3">
+                    <label for="end_time_${slotCount}" class="form-label">结束时间</label>
+                    <input type="datetime-local" class="form-control" id="end_time_${slotCount}" name="end_time[]" required min="{{ current_local_time }}">
+                </div>
+            `;
+            timeSlotsDiv.appendChild(newSlot);
+            slotCount++;
         }
     </script>
 {% endblock %}
