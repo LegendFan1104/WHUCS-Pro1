@@ -3,14 +3,18 @@
 {% block content %}
     <div class="row">
         <div class="col-md-8">
-            <h2>{{ service.name }}</h2>
-            <p class="text-muted">服务商：{{ provider.username }}</p>
-            <p>{{ service.description }}</p>
-            <p>价格：¥{{ service.price }}</p>
-            <p>时长：{{ service.duration }} 分钟</p>
+            <div class="service-detail-main">
+                <h2>{{ service.name }}</h2>
+                <p class="text-muted">服务商：{{ provider.username }}</p>
+                <p>{{ service.description }}</p>
+                <div class="mb-3">
+                    <span class="service-price">¥{{ service.price }}</span>
+                    <span class="service-duration">{{ service.duration }} 分钟</span>
+                </div>
+            </div>
         </div>
         <div class="col-md-4">
-            <div class="card">
+            <div class="detail-book-card card">
                 <div class="card-body">
                     <h5 class="card-title">可用时段</h5>
                     {% set current_time = now() %}

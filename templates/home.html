@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}首页{% endblock %}
+{% block bg_decoration %}
+<div class="home-bg-decoration"></div>
+{% endblock %}
 {% block content %}
-
     <!-- 置顶横幅模块 -->
     {% if current_user.is_authenticated and upcoming_appointments %}
         <div class="alert alert-info" role="alert">
@@ -14,8 +16,8 @@
         </div>
     {% endif %}
 
-    <h1 class="mb-4">热门服务推荐</h1>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+    <div class="text-center"><span class="glass-title">热门服务推荐</span></div>
+    <div class="row row-cols-1 row-cols-md-3 g-4 card-container justify-content-center">
         {% for service in services %}
             <div class="col">
                 <div class="card h-100">
@@ -33,4 +35,24 @@
             </div>
         {% endfor %}
     </div>
+<script>
+  // 动态联动动画：hover glass-title 时所有卡片动画
+  document.addEventListener('DOMContentLoaded', function() {
+    var glassTitle = document.querySelector('.glass-title');
+    if (glassTitle) {
+      glassTitle.addEventListener('mouseenter', function() {
+        document.body.classList.add('home-cards-animate');
+      });
+      glassTitle.addEventListener('mouseleave', function() {
+        document.body.classList.remove('home-cards-animate');
+      });
+      glassTitle.addEventListener('focus', function() {
+        document.body.classList.add('home-cards-animate');
+      });
+      glassTitle.addEventListener('blur', function() {
+        document.body.classList.remove('home-cards-animate');
+      });
+    }
+  });
+</script>
 {% endblock %}

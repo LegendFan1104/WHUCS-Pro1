@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         body {
             background: radial-gradient(
@@ -13,9 +14,10 @@
                 #e0e0e0 100%
             );
             min-height: 100vh;
+            /* 为内容区域添加顶部内边距，避免被导航栏遮挡 */
+            padding-top: 70px; 
         }
 
-        /* 居中显示的通知样式 */
         .flash-message {
             position: fixed;
             top: 50%;
@@ -29,9 +31,43 @@
         .flash-message .alert {
             margin-bottom: 10px;
         }
+
+        .navbar-brand-area img {
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .navbar-actions .btn {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            line-height: 1.4;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: auto;
+        }
+
+        @media (max-width: 991px) {
+            .navbar-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                padding-top: 10px;
+            }
+
+            .navbar-brand-area {
+                display: flex;
+                align-items: center;
+            }
+        }
     </style>
 </head>
 <body>
+{% block bg_decoration %}
+<div class="global-bg-decoration"></div>
+{% endblock %}
+
 <!-- 通知消息 -->
 <div class="flash-message">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -47,22 +83,29 @@
     {% endwith %}
 </div>
 
-<!-- 导航栏 -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<!-- 响应式导航栏，添加 fixed-top 类 -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
-        <!-- 修改此处 href 属性值为 url_for('home') -->
-        <a class="navbar-brand" href="{{ url_for('home') }}">预约系统</a>
+        <div class="navbar-brand-area">
+            <img src="{{ url_for('static', filename='Icon.png') }}" alt="logo">
+            <a class="nav-link me-2" href="{{ url_for('index') }}">首页</a>
+            {% if current_user.is_authenticated and current_user.role == 'provider' %}
+                <a class="navbar-brand" href="{{ url_for('provider_dashboard') }}">预约系统</a>
+            {% else %}
+                <a class="navbar-brand" href="{{ url_for('home') }}">预约系统</a>
+            {% endif %}
+        </div>
+
+        <!-- 汉堡菜单按钮 -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
                 aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
+        <!-- 折叠内容区域 -->
         <div class="collapse navbar-collapse" id="navbarContent">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('index') }}">首页</a>
-                </li>
+            <ul class="navbar-nav me-auto flex-row flex-wrap align-items-center" style="gap: 10px;">
                 {% if current_user.is_authenticated %}
-                    <!-- 只有普通用户角色才显示“我的预约” -->
                     {% if current_user.role == 'user' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('user_appointments') }}">我的预约</a>
@@ -79,19 +122,21 @@
                     {% endif %}
                 {% endif %}
             </ul>
-            <form class="d-flex" action="{{ url_for('search_services') }}" method="get">
-                <input class="form-control me-2" type="search" placeholder="搜索服务标题" aria-label="Search" name="query">
-            </form>
-            <div class="d-flex">
+
+            <div class="ms-auto navbar-actions">
+                {% if not current_user.is_authenticated or current_user.role != 'provider' %}
+                <form class="d-flex mb-2 mb-lg-0" action="{{ url_for('search_services') }}" method="get">
+                    <input class="form-control me-2" type="search" placeholder="搜索服务标题" aria-label="Search" name="query">
+                </form>
+                {% endif %}
+
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light me-2">退出登录</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light">退出登录</a>
                 {% else %}
-                    <div class="btn-group" role="group">
-                        <a href="{{ url_for('user_login') }}" class="btn btn-outline-light">用户登录</a>
-                        <a href="{{ url_for('provider_login') }}" class="btn btn-outline-light">服务商登录</a>
-                        <a href="{{ url_for('user_register') }}" class="btn btn-primary ms-2">用户注册</a>
-                        <a href="{{ url_for('provider_register') }}" class="btn btn-primary ms-2">服务商注册</a>
-                    </div>
+                    <a href="{{ url_for('user_login') }}" class="btn btn-outline-light">用户登录</a>
+                    <a href="{{ url_for('provider_login') }}" class="btn btn-outline-light">服务商登录</a>
+                    <a href="{{ url_for('user_register') }}" class="btn btn-primary">用户注册</a>
+                    <a href="{{ url_for('provider_register') }}" class="btn btn-primary">服务商注册</a>
                 {% endif %}
             </div>
         </div>
@@ -105,19 +150,13 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // 等待DOM加载完成
     document.addEventListener('DOMContentLoaded', function() {
-        // 获取所有通知元素
         const alerts = document.querySelectorAll('.flash-message .alert');
-
-        // 为每个通知添加自动关闭逻辑
         alerts.forEach(alert => {
-            // 2秒后关闭通知
             setTimeout(() => {
-                // 使用Bootstrap的API关闭通知
                 const bsAlert = new bootstrap.Alert(alert);
                 bsAlert.close();
-            }, 2000); // 2000毫秒 = 2秒
+            }, 2000);
         });
     });
 </script>

@@ -1,8 +1,172 @@
 {% extends "base.html" %}
 {% block title %}首页 - BookEasy+{% endblock %}
 {% block content %}
-    <div class="d-flex flex-column justify-content-center align-items-center vh-100">
-        <h1 class="display-1 text-center mb-5">欢迎来到 BookEasy+</h1>
-        <a href="{{ url_for('home') }}" class="btn btn-primary btn-lg">点击开始预约</a>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            text-decoration: none;
+            outline: none;
+            font-family: "Source Sans Pro", sans-serif;
+        }
+        body {
+            overflow-x: hidden; 
+        }
+
+        .shell_1{
+            height: 100vh;
+            overflow-x: hidden;
+            perspective: 3px;
+        }
+        .shell_1 div{
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            letter-spacing: 2px;
+        }
+        .image{
+            transform: translateZ(-1px) scale(1.6);
+            background-size: cover;
+            height: 100vh;
+            z-index: -1;
+        }
+        .first-image {
+            transform: translateZ(0);
+            z-index: 1;
+        }
+        .text{
+            height: 50vh;
+            background: rgba(55, 166, 197, 0.203);
+            border: 1.5px solid rgba(255,255,255,0.35);
+            backdrop-filter: blur(32px) saturate(1.5);
+            -webkit-backdrop-filter: blur(32px) saturate(1.5);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(110,193,228,0.15), 0 0 0 1px rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            max-width: 800px;
+            padding: 2rem;
+            position: relative !important;
+            overflow: hidden !important;
+        }
+        .text::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; right: 0; bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 60% 40%, rgba(110,193,228,0.25) 0%, rgba(98,171,203,0.18) 40%, transparent 80%);
+            opacity: 0.7;
+            animation: waterwave 2.5s linear infinite;
+        }
+        @keyframes waterwave {
+            0% { transform: scale(1) translate(0,0);}
+            50% { transform: scale(1.2) translate(-20px, 20px);}
+            100% { transform: scale(1) translate(0,0);}
+        }
+
+        .text::after {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; right: 0; bottom: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(120deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 100%);
+            opacity: 0.7;
+        }
+        
+        .text > * {
+            position: relative;
+            z-index: 1;
+        }
+        .text h1{
+            color: #fff;
+            font-size: 2.4rem;
+            font-weight: 700;
+            text-align: center;
+            text-shadow: 0 2px 8px rgba(110,193,228,0.1);
+            letter-spacing: 1px;
+        }
+        .heading{
+            z-index: -1;
+            transform: translateY(-30vh) translateZ(1px);
+            color: black;
+        }
+        /* 按钮样式 */
+        .enter-button {
+            display: inline-block;
+            position: fixed;
+            z-index: 100;
+            overflow: hidden;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-weight: 600;
+            font-size: 1.5em;
+            padding: 0.8em 2.4em;
+            color: #3498db;
+            border: 0.15em solid #3498db;
+            border-radius: 2em;
+            background: rgba(255,255,255,0.72);
+            box-shadow: 0 4px 16px 0 rgba(110,193,228,0.10);
+            backdrop-filter: blur(12px) saturate(1.2);
+            -webkit-backdrop-filter: blur(12px) saturate(1.2);
+            bottom: 2em;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .enter-button:hover, .enter-button:focus {
+            background: rgba(52,152,219,0.82);
+            color: #fff;
+            border-color: #3498db;
+        }
+        .enter-button:before,
+        .enter-button:after {
+            display: none;
+        }
+    </style>
+    <div class="shell_1">
+         <div class="image" style="background-image: url('./static/start1.png');"></div>
+<!--        <div class="heading">-->
+<!--            <h1>丰富服务，尽在指尖</h1>-->
+<!--        </div>-->
+        <div class="text">
+            <h1>预约・管理・提醒，一步到位</h1>
+        </div>
+        <div class="image" style="background-image: url('./static/start2.png');"></div>
+<!--        <div class="heading">-->
+<!--            <h1>智能后台，高效管理</h1>-->
+<!--        </div>-->
+        <div class="text">
+            <h1>服务・评价・数据，一手掌控</h1>
+        </div>
+         <div class="image" style="background-image: url('./static/start3.png');"></div>
+<!--        <div class="heading">-->
+<!--            <h1>安全防护，放心使用</h1>-->
+<!--        </div>-->
+        <div class="text">
+            <h1>注册・登录・加密，商家极速入驻</h1>
+        </div>
+        <div class="image" style="background-image: url('./static/start4.png');"></div>
+<!--        <div class="heading">-->
+<!--            <h1>移动预约，随时随地</h1>-->
+<!--        </div>-->
+        <div class="text">
+            <h1>预约・取消・反馈，用户一键操作</h1>
+        </div>
+         <div class="image" style="background-image: url('./static/start5.png');"></div>
+<!--        <div class="heading">-->
+<!--            <h1>开启智能预约</h1>-->
+<!--        </div>-->
+        <div class="text">
+            <h1>点击下方按钮开始体验吧</h1>
+        </div>
     </div>
+    <a href="{{ url_for('home') }}" class="enter-button">立即进入</a>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 {% endblock %}

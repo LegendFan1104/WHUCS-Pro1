@@ -1,16 +1,15 @@
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import bcrypt
 import secrets
 from functools import wraps
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@127.0.0.1/appointment_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://legend:e03uU9vfwIdwteg7@mysql5.sqlpub.com:3310/appointment_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = secrets.token_hex(16)
-
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'user_login'
@@ -140,6 +139,7 @@ def user_register():
     return render_template('user_register.html')
 
 
+# 用户登录路由
 @app.route('/user/login', methods=['GET', 'POST'])
 def user_login():
     if current_user.is_authenticated:
@@ -148,6 +148,7 @@ def user_login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        remember = request.form.get('rememberMe') == 'on'  # 获取记住我选项的值
 
         if not username or not password:
             flash('请输入用户名和密码', 'error')
@@ -156,13 +157,14 @@ def user_login():
         # 只查询角色为 'user' 的用户
         user = User.query.filter_by(username=username, role='user').first()
         if user and user.check_password(password):
-            login_user(user)
+            login_user(user, remember=remember)  # 设置 remember 参数
             flash('登录成功', 'success')
             return redirect(url_for('home'))
 
         flash('用户名或密码错误', 'error')
 
     return render_template('user_login.html')
+
 
 
 @app.route('/logout')
@@ -219,7 +221,7 @@ def provider_register():
 @role_required('provider')
 def provider_dashboard():
     services = Service.query.filter_by(provider_id=current_user.id).all()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     # 查询当前时间在结束时间之前且还未预约的时段，并关联服务信息
     upcoming_slots = AvailableSlot.query.join(Service).filter(
         Service.provider_id == current_user.id,
@@ -444,6 +446,7 @@ def search_services():
     return render_template('search_results.html', services=services)
 
 
+# 服务商登录路由
 @app.route('/provider/login', methods=['GET', 'POST'])
 def provider_login():
     if current_user.is_authenticated:
@@ -452,6 +455,7 @@ def provider_login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        remember = request.form.get('rememberMe') == 'on'  # 获取记住我选项的值
 
         if not username or not password:
             flash('请输入用户名和密码', 'error')
@@ -460,7 +464,7 @@ def provider_login():
         # 只查询角色为 'provider' 的用户
         user = User.query.filter_by(username=username, role='provider').first()
         if user and user.check_password(password):
-            login_user(user)
+            login_user(user, remember=remember)  # 设置 remember 参数
             flash('登录成功', 'success')
             return redirect(url_for('provider_dashboard'))
 
